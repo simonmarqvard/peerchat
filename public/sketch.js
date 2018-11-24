@@ -1,5 +1,7 @@
-let myStream;
+let myStream
+let gcapture
 let peer;
+let gnumber
 
 let constraints = {
   audio: true,
@@ -57,7 +59,8 @@ function initialize() {
       // let phoneNumber = chatIcon.innerHTML
       chatIcon.addEventListener('click', () => {
         let number = chatIcon.innerHTML
-        makeCall(number)
+        gnumber = number;
+        makeCall(number, myStream)
       })
     })
   })
@@ -113,11 +116,13 @@ function initialize() {
       console.log("Got a call");
       currentCall = incomingCall;
 
+
       let pickupButton = document.querySelector('#pickup')
       pickupButton.style.visibility = 'visible';
       pickupButton.addEventListener('click', () => {
         incomingCall.answer(myStream);
       })
+
       incomingCall.on('stream', function(remoteStream) {
         pickupButton.style.visibility = 'hidden';
         var thisVideoElement = document.getElementById('thevideo')
@@ -132,6 +137,8 @@ function initialize() {
           otherVideoElement.play();
         }
         otherVideoElement.addEventListener('click', openfullscreen)
+        var flipScreen = document.getElementById('flipvideo')
+        flipScreen.addEventListener('click', flip.bind(this, currentCall.peer))
       });
     });
     let endChat = document.querySelector("#endchat")
@@ -140,10 +147,12 @@ function initialize() {
 
 }
 
-function makeCall(number) {
+
+
+function makeCall(number, typeofstream) {
   console.log("clicked")
   alert("You are about to call: " + number)
-  var call = peer.call(number, myStream);
+  var call = peer.call(number, typeofstream);
   currentCall = call;
   call.on('stream', function(remoteStream) {
     var otherVideoElement = document.getElementById('othervideo');
@@ -159,7 +168,8 @@ function makeCall(number) {
     }
     otherVideoElement.addEventListener('click', openfullscreen)
   });
-
+  var flipScreen = document.getElementById('flipvideo')
+  flipScreen.addEventListener('click', flip.bind(this, currentCall.peer))
 }
 
 function hangup() {
@@ -181,4 +191,25 @@ function openfullscreen() {
   } else {
     console.log("DIDNTWORK")
   }
+}
+
+// can't get this to work under stream. Is new call necessary? if so
+//  Attempt take the capture and make it global gcapture -> use make call function again
+//change myStream to g capture
+function flip(onGoingCall) {
+  console.log("FLIP")
+  navigator.getDisplayMedia({
+    video: true
+  }).then(capture => {
+    var capturevideo = document.getElementById("screencap");
+    capturevideo.srcObject = capture;
+    console.log("here", capture);
+    capturevideo.onloadedmetadata = function() {
+      capturevideo.play();
+    }
+    console.log("MAKING CALL")
+    makeCall(onGoingCall, capture)
+  }, error => {
+    console.log('unable to acquire screen' + errer)
+  })
 }
